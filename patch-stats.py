@@ -151,6 +151,7 @@ def main():
     ap.add_argument("--carrier", action="append", help="other submitters whose series may carry these people's patches, repeatable [PATCH_STATS_CARRIERS, comma separated]")
     ap.add_argument("--patchwork", default=E("PATCH_STATS_PATCHWORK", PW), help="patchwork base URL [PATCH_STATS_PATCHWORK]")
     ap.add_argument("--cache-dir", default=E("PATCH_STATS_CACHE", CACHE), help="HTTP cache dir [PATCH_STATS_CACHE]")
+    ap.add_argument("-o", "--output", metavar="FILE", help="write per-person lists of the merged/signoff/reviewed/tested commit headings (and submitted patches) to FILE as proof [PATCH_STATS_OUTPUT]")
     ap.add_argument("--no-submitted", action="store_true", help="skip patchwork, git counts only")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
@@ -209,6 +210,21 @@ def main():
         print(f"{k:10s}" + "".join(f"{len(g[n][k]):{w}d}" for n in names))
     if not a.no_submitted:
         print(f"{'submitted':10s}" + "".join(f"{len(subs[n]):{w}d}" for n in names) + f"   (scanned {nscan} series/patches)")
+    out = a.output or os.environ.get("PATCH_STATS_OUTPUT")
+    if out:
+        with open(out, "w") as fh:
+            fh.write(f"Patch stats {a.since} .. {a.until if a.until_given else dt.date.today().isoformat()}\n"
+                     f"Refs: {', '.join(a.ref)}\n\n")
+            for n in names:
+                fh.write(f"{n} ({', '.join(a.persons[n])})\n")
+                for k in STATS:
+                    fh.write(f"{k} ({len(g[n][k])})\n" + "".join(f"    {l}\n" for l in g[n][k]))
+                if not a.no_submitted:
+                    fh.write(f"submitted ({len(subs[n])})\n")
+                    for subj, mid in subs[n]:
+                        fh.write(f"    {subj}\n        https://lore.kernel.org/all/{urllib.parse.quote(mid.strip('<>'), safe='@')}/\n")
+                fh.write("\n")
+        print(f"\nProof written to {out}")
     if a.verbose:
         for n in names:
             print(f"\n=== {n} ({', '.join(a.persons[n])}) ===")

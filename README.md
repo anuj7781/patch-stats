@@ -20,6 +20,7 @@ Needs Python 3 (stdlib only), git, and network access to patchwork.
 - `--since` / `--until`: date range. Default is `2026-01-01` to now.
 - `--person NAME=EMAIL[,EMAIL...]` (repeatable): a person to report on and all their addresses. An address belongs to one person only. `--email` is a shortcut for a single person named `you`.
 - `--carrier` (repeatable): other people who post series containing these people's patches (maintainers who forward their work). The listed people are always scanned themselves. Patches carried by anyone else are not counted as submitted.
+- `-o` / `--output FILE`: write a proof file with, per person, the commit headings (`hash subject`) behind merged, signoff, reviewed and tested, plus the submitted patches with lore links.
 - `--no-submitted`: git counts only (no network).
 
 Every option has a `PATCH_STATS_*` environment variable, see `--help`.
