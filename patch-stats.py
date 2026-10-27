@@ -65,7 +65,7 @@ TRAILER = re.compile(r"(?im)^[ \t]*(signed-off-by|reviewed-by|tested-by):[^\n]*?
 
 def git_counts(a):
     mine = {e.lower() for e in a.email}
-    cmd = ["git", "-C", a.tree, "log", a.ref, "--no-merges", "--since=" + a.since]
+    cmd = ["git", "-C", a.tree, "log"] + a.ref + ["--no-merges", "--since=" + a.since]
     if a.until_given:
         cmd.append("--until=" + a.until + " 23:59:59")
     cmd.append("--format=%H%x1f%ae%x1f%s%x1f%B%x1e")
@@ -83,8 +83,7 @@ def git_counts(a):
         hit = {key[t.lower()] for t, e in TRAILER.findall(body) if e.lower() in mine}
         for k in hit:
             res[k].append(line)
-    head = subprocess.run(["git", "-C", a.tree, "log", "-1", "--format=%h %cs", a.ref], capture_output=True, text=True).stdout.strip()
-    return res, head
+    return res
 
 
 def authors_in_mbox(raw):
@@ -138,7 +137,7 @@ def main():
     ap.add_argument("--since", default=E("PATCH_STATS_SINCE", "2026-01-01"), help="YYYY-MM-DD [PATCH_STATS_SINCE]")
     ap.add_argument("--until", default=E("PATCH_STATS_UNTIL"), help="YYYY-MM-DD, default: no upper bound [PATCH_STATS_UNTIL]")
     ap.add_argument("--tree", default=E("PATCH_STATS_TREE", "."), help="linux git repo, default cwd [PATCH_STATS_TREE]")
-    ap.add_argument("--ref", default=E("PATCH_STATS_REF", "HEAD"), help="ref to scan, default HEAD i.e. the checked-out tree; never checks anything out [PATCH_STATS_REF]")
+    ap.add_argument("--ref", action="append", help="ref to scan, repeatable: commits reachable from any ref are counted once. Default HEAD, i.e. the checked-out tree; never checks anything out [PATCH_STATS_REF, comma separated]")
     ap.add_argument("--email", action="append", help="author email, repeatable [PATCH_STATS_EMAILS, comma separated]")
     ap.add_argument("--carrier", action="append", help="other submitters whose series may carry your patches, repeatable [PATCH_STATS_CARRIERS, comma separated]")
     ap.add_argument("--patchwork", default=E("PATCH_STATS_PATCHWORK", PW), help="patchwork base URL [PATCH_STATS_PATCHWORK]")
@@ -146,6 +145,7 @@ def main():
     ap.add_argument("--no-submitted", action="store_true", help="skip patchwork, git counts only")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
+    a.ref = a.ref or env_list("PATCH_STATS_REF", "HEAD")
     a.until_given = bool(a.until)
     a.until = a.until or dt.date.today().isoformat()
     a.email = a.email or env_list("PATCH_STATS_EMAILS", DEFAULT_EMAILS)
@@ -153,31 +153,35 @@ def main():
     a.tree = os.path.expanduser(a.tree)
     PW, CACHE = a.patchwork.rstrip("/"), os.path.expanduser(a.cache_dir)
 
-    if subprocess.run(["git", "-C", a.tree, "rev-parse", "--verify", "-q", a.ref + "^{commit}"], capture_output=True).returncode:
-        sys.exit(f"error: '{a.ref}' not found in git repo '{a.tree}' (use --tree / --ref)")
+    for r in a.ref:
+        if subprocess.run(["git", "-C", a.tree, "rev-parse", "--verify", "-q", r + "^{commit}"], capture_output=True).returncode:
+            sys.exit(f"error: '{r}' not found in git repo '{a.tree}' (use --tree / --ref)")
 
-    g, head = git_counts(a)
+    g = git_counts(a)
     shallow = subprocess.run(["git", "-C", a.tree, "rev-parse", "--is-shallow-repository"], capture_output=True, text=True).stdout.strip() == "true"
-    total = subprocess.run(["git", "-C", a.tree, "rev-list", "--count", "--no-merges", "--since=" + a.since] + (["--until=" + a.until + " 23:59:59"] if a.until_given else []) + [a.ref],
+    total = subprocess.run(["git", "-C", a.tree, "rev-list", "--count", "--no-merges", "--since=" + a.since] + (["--until=" + a.until + " 23:59:59"] if a.until_given else []) + a.ref,
                            capture_output=True, text=True).stdout.strip()
-    print(f"Period {a.since} .. {a.until if a.until_given else 'now'}   ({a.ref} head: {head}; {total} commits in range)")
-    top = subprocess.run(["git", "-C", a.tree, "log", "-1", "--format=%h%x09%ae%x09%ce%x09%cs%x09%P%x09%s", a.ref], capture_output=True, text=True).stdout.rstrip("\n").split("\t")
-    if len(top) == 6:
+    print(f"Period {a.since} .. {a.until if a.until_given else 'now'}   ({total} commits in range)")
+    mine = {e.lower() for e in a.email}
+    for r in a.ref:
+        top = subprocess.run(["git", "-C", a.tree, "log", "-1", "--format=%h%x09%ae%x09%ce%x09%cs%x09%P%x09%s", r], capture_output=True, text=True).stdout.rstrip("\n").split("\t")
+        if len(top) != 6:
+            continue
         h, ae, ce, cd, parents, subj = top
         counted = any(l.startswith(h) for l in g["merged"])
         why = ("counted as merged" if counted else
                "NOT counted: merge commit" if len(parents.split()) > 1 else
-               f"NOT counted: author {ae} is not in --email {a.email}" if ae.lower() not in {e.lower() for e in a.email} else
+               f"NOT counted: author {ae} is not in --email {a.email}" if ae.lower() not in mine else
                f"NOT counted: committed {cd}, outside {a.since}..{a.until}")
-        tb = subprocess.run(["git", "-C", a.tree, "log", "-1", "--format=%B", a.ref], capture_output=True, text=True, errors="replace").stdout
+        tb = subprocess.run(["git", "-C", a.tree, "log", "-1", "--format=%B", r], capture_output=True, text=True, errors="replace").stdout
         tr = ", ".join(f"{t}:{e}" for t, e in TRAILER.findall(tb)) or "none"
-        print(f"top commit {h} \"{subj[:50]}\" author {ae} committer {ce} {cd}: {why}\n    trailers: {tr}")
+        print(f"ref {r}: top commit {h} \"{subj[:50]}\" author {ae} committer {ce} {cd}: {why}\n    trailers: {tr}")
+        if (dt.date.today() - dt.date.fromisoformat(cd)).days > 14 and not a.until_given:
+            print(f"WARNING: '{r}' head is from {cd}; newer commits are missing if the tree is stale (git fetch)", file=sys.stderr)
     if shallow:
         print("WARNING: shallow clone, git history is truncated so counts are too low (git fetch --unshallow)", file=sys.stderr)
     if total in ("", "0"):
-        print(f"WARNING: no commits at all in range on '{a.ref}'; wrong --ref/--tree or stale clone (git fetch)", file=sys.stderr)
-    elif head.split()[-1] < a.until and (dt.date.fromisoformat(a.until) - dt.date.fromisoformat(head.split()[-1])).days > 14:
-        print(f"WARNING: '{a.ref}' head is {head.split()[-1]}, older than --until; newer commits are missing (git fetch)", file=sys.stderr)
+        print(f"WARNING: no commits at all in range on {a.ref}; wrong --ref/--tree or stale clone (git fetch)", file=sys.stderr)
     for k in ("merged", "signoff", "reviewed", "tested"):
         print(f"{k:10s}{len(g[k]):4d}")
         if a.verbose:

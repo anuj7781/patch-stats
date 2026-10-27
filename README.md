@@ -15,7 +15,7 @@ Needs Python 3 (stdlib only), git, and network access to patchwork.
 ./patch-stats.py --tree /path/to/linux --email you@example.com -v    # list every commit/patch, with lore links
 ```
 
-- `--tree` / `--ref`: the repo and ref to scan. Defaults to the current directory and `HEAD`, i.e. whatever is checked out; nothing is ever checked out or fetched.
+- `--tree` / `--ref`: the repo and ref(s) to scan. Defaults to the current directory and `HEAD`, i.e. whatever is checked out; nothing is ever checked out or fetched. `--ref` can be repeated (e.g. `--ref origin/master --ref origin/for-next`) when your work landed in different trees; each commit is counted once.
 - `--since` / `--until`: date range. Default is `2026-01-01` to now.
 - `--email` (repeatable): your author addresses.
 - `--carrier` (repeatable): other people who post series containing your patches (co-authors, maintainers who forward your work). Patches carried by anyone not listed are not counted as submitted.
