@@ -60,19 +60,29 @@ def pw_list(path, **params):
     return out
 
 
+TRAILER = re.compile(r"(?im)^[ \t]*(signed-off-by|reviewed-by|tested-by):[^\n]*?<([^>\n]+)>")
+
+
 def git_counts(a):
-    emails = "|".join(re.escape(e) for e in a.email)
-    rng = ["--since=" + a.since] + (["--until=" + a.until + " 23:59:59"] if a.until_given else [])
-    base = ["git", "-C", a.tree, "log", a.ref, "--no-merges"] + rng
-
-    def run(extra):
-        return subprocess.run(base + extra, capture_output=True, text=True, check=True).stdout.strip().splitlines()
-
-    merged = run(["-i", "-E", "--author=" + emails, "--format=%h %s"])
-    res = {"merged": merged}
-    for key, tag in (("signoff", "Signed-off-by"), ("reviewed", "Reviewed-by"), ("tested", "Tested-by")):
-        pat = rf"^{tag}:.*<({emails})>"
-        res[key] = run(["-i", "-E", "--grep=" + pat, "--format=%h %s"])
+    mine = {e.lower() for e in a.email}
+    cmd = ["git", "-C", a.tree, "log", a.ref, "--no-merges", "--since=" + a.since]
+    if a.until_given:
+        cmd.append("--until=" + a.until + " 23:59:59")
+    cmd.append("--format=%H%x1f%ae%x1f%s%x1f%B%x1e")
+    out = subprocess.run(cmd, capture_output=True, text=True, errors="replace", check=True).stdout
+    res = {"merged": [], "signoff": [], "reviewed": [], "tested": []}
+    key = {"signed-off-by": "signoff", "reviewed-by": "reviewed", "tested-by": "tested"}
+    for rec in out.split("\x1e"):
+        f = rec.strip("\n").split("\x1f", 3)
+        if len(f) < 4:
+            continue
+        h, ae, subj, body = f
+        line = f"{h[:12]} {subj}"
+        if ae.lower() in mine:
+            res["merged"].append(line)
+        hit = {key[t.lower()] for t, e in TRAILER.findall(body) if e.lower() in mine}
+        for k in hit:
+            res[k].append(line)
     head = subprocess.run(["git", "-C", a.tree, "log", "-1", "--format=%h %cs", a.ref], capture_output=True, text=True).stdout.strip()
     return res, head
 
@@ -159,7 +169,9 @@ def main():
                "NOT counted: merge commit" if len(parents.split()) > 1 else
                f"NOT counted: author {ae} is not in --email {a.email}" if ae.lower() not in {e.lower() for e in a.email} else
                f"NOT counted: committed {cd}, outside {a.since}..{a.until}")
-        print(f"top commit {h} \"{subj[:50]}\" author {ae} committer {ce} {cd}: {why}")
+        tb = subprocess.run(["git", "-C", a.tree, "log", "-1", "--format=%B", a.ref], capture_output=True, text=True, errors="replace").stdout
+        tr = ", ".join(f"{t}:{e}" for t, e in TRAILER.findall(tb)) or "none"
+        print(f"top commit {h} \"{subj[:50]}\" author {ae} committer {ce} {cd}: {why}\n    trailers: {tr}")
     if shallow:
         print("WARNING: shallow clone, git history is truncated so counts are too low (git fetch --unshallow)", file=sys.stderr)
     if total in ("", "0"):
