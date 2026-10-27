@@ -24,7 +24,7 @@ CACHE = os.path.expanduser("~/.cache/patch-stats")
 DEFAULT_PERSONS = ("Anuj=anuj20.g@samsung.com,anuj1072538@gmail.com;"
                    "Kanchan=joshi.k@samsung.com;"
                    "Nitesh=nj.shetty@samsung.com")
-DEFAULT_CARRIERS = "asml.silence@gmail.com,hch@lst.de"
+DEFAULT_CARRIERS = "asml.silence@gmail.com,hch@lst.de,bvanassche@acm.org"
 
 
 def env_list(name, default):
