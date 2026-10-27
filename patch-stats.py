@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""Upstream patch stats for one author over a date range.
+"""Upstream patch stats for one or more people over a date range.
 
 merged / signoff / reviewed / tested come from `git log` on a kernel tree.
 submitted comes from patchwork.kernel.org: every patch email that hit a
 mailing list (all revisions and resends) whose author -- the body "From:"
-line, falling back to the header From -- is one of --email.  Patches sent
-by other people on the author's behalf are found by scanning the series of
-the submitters listed in --carrier.
+line, falling back to the header From -- is one of a person's emails.
+Patches sent by other people on someone's behalf are found by scanning the
+series of the --carrier submitters (every person is scanned automatically).
 
-  ./patch-stats.py --tree /path/to/linux      # 2026-01-01 .. today
+  ./patch-stats.py --tree /path/to/linux      # 2026-01-01 .. today, all people
   ./patch-stats.py --tree /path/to/linux -v   # also list every commit/patch
+  ./patch-stats.py --person "Me=me@x.org,me@y.org" --person "You=you@x.org"
 
 Every option has an environment variable (shown in --help) so a test machine
 can be configured once, e.g. export PATCH_STATS_TREE=/srv/linux.
@@ -20,8 +21,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 PW = "https://patchwork.kernel.org"
 CACHE = os.path.expanduser("~/.cache/patch-stats")
-DEFAULT_EMAILS = "anuj20.g@samsung.com,anuj1072538@gmail.com"
-DEFAULT_CARRIERS = "joshi.k@samsung.com,asml.silence@gmail.com,hch@lst.de"
+DEFAULT_PERSONS = ("Anuj=anuj20.g@samsung.com,anuj1072538@gmail.com;"
+                   "Kanchan=joshi.k@samsung.com;"
+                   "Nitesh=nj.shetty@samsung.com")
+DEFAULT_CARRIERS = "asml.silence@gmail.com,hch@lst.de"
 
 
 def env_list(name, default):
@@ -63,14 +66,17 @@ def pw_list(path, **params):
 TRAILER = re.compile(r"(?im)^[ \t]*(signed-off-by|reviewed-by|tested-by):[^\n]*?<([^>\n]+)>")
 
 
+STATS = ("merged", "signoff", "reviewed", "tested")
+
+
 def git_counts(a):
-    mine = {e.lower() for e in a.email}
+    owner = a.owner
     cmd = ["git", "-C", a.tree, "log"] + a.ref + ["--no-merges", "--since=" + a.since]
     if a.until_given:
         cmd.append("--until=" + a.until + " 23:59:59")
     cmd.append("--format=%H%x1f%ae%x1f%s%x1f%B%x1e")
     out = subprocess.run(cmd, capture_output=True, text=True, errors="replace", check=True).stdout
-    res = {"merged": [], "signoff": [], "reviewed": [], "tested": []}
+    res = {n: {k: [] for k in STATS} for n in a.persons}
     key = {"signed-off-by": "signoff", "reviewed-by": "reviewed", "tested-by": "tested"}
     for rec in out.split("\x1e"):
         f = rec.strip("\n").split("\x1f", 3)
@@ -78,11 +84,11 @@ def git_counts(a):
             continue
         h, ae, subj, body = f
         line = f"{h[:12]} {subj}"
-        if ae.lower() in mine:
-            res["merged"].append(line)
-        hit = {key[t.lower()] for t, e in TRAILER.findall(body) if e.lower() in mine}
-        for k in hit:
-            res[k].append(line)
+        if ae.lower() in owner:
+            res[owner[ae.lower()]]["merged"].append(line)
+        hit = {(owner[e.lower()], key[t.lower()]) for t, e in TRAILER.findall(body) if e.lower() in owner}
+        for name, k in hit:
+            res[name][k].append(line)
     return res
 
 
@@ -108,11 +114,11 @@ def authors_in_mbox(raw):
 
 
 def submitted(a):
-    mine = {e.lower() for e in a.email}
+    owner = a.owner
     series, singles = {}, {}
-    senders = a.email + a.carrier
-    for s in senders:
-        for p in pw_list("patches", submitter=s, since=a.since + "T00:00:00", before=a.until + "T23:59:59"):
+    senders = sorted(set(owner) | {c.lower() for c in a.carrier})
+    for s_ in senders:
+        for p in pw_list("patches", submitter=s_, since=a.since + "T00:00:00", before=a.until + "T23:59:59"):
             if p["series"]:
                 series[p["series"][0]["id"]] = p["series"][0].get("mbox") or f"{PW}/series/{p['series'][0]['id']}/mbox/"
             else:
@@ -123,11 +129,13 @@ def submitted(a):
     seen = {}
     for raw in raws:
         for subj, addr, mid in authors_in_mbox(raw):
-            if addr in mine:
-                seen[mid] = subj
-    lo, hi = a.since, a.until
-    kept = sorted((v, m) for m, v in seen.items() if lo <= v[:10] <= hi)
-    return kept, len(series) + len(singles)
+            if addr in owner:
+                seen[mid] = (owner[addr], subj)
+    res = {n: [] for n in a.persons}
+    for mid, (name, v) in seen.items():
+        if a.since <= v[:10] <= a.until:
+            res[name].append((v, mid))
+    return {n: sorted(l) for n, l in res.items()}, len(series) + len(singles)
 
 
 def main():
@@ -138,8 +146,9 @@ def main():
     ap.add_argument("--until", default=E("PATCH_STATS_UNTIL"), help="YYYY-MM-DD, default: no upper bound [PATCH_STATS_UNTIL]")
     ap.add_argument("--tree", default=E("PATCH_STATS_TREE", "."), help="linux git repo, default cwd [PATCH_STATS_TREE]")
     ap.add_argument("--ref", action="append", help="ref to scan, repeatable: commits reachable from any ref are counted once. Default HEAD, i.e. the checked-out tree; never checks anything out [PATCH_STATS_REF, comma separated]")
-    ap.add_argument("--email", action="append", help="author email, repeatable [PATCH_STATS_EMAILS, comma separated]")
-    ap.add_argument("--carrier", action="append", help="other submitters whose series may carry your patches, repeatable [PATCH_STATS_CARRIERS, comma separated]")
+    ap.add_argument("--person", action="append", metavar="NAME=EMAIL[,EMAIL...]", help="a person to report on, repeatable [PATCH_STATS_PERSONS, ';' separated]")
+    ap.add_argument("--email", action="append", help="shortcut for a single --person named 'you'")
+    ap.add_argument("--carrier", action="append", help="other submitters whose series may carry these people's patches, repeatable [PATCH_STATS_CARRIERS, comma separated]")
     ap.add_argument("--patchwork", default=E("PATCH_STATS_PATCHWORK", PW), help="patchwork base URL [PATCH_STATS_PATCHWORK]")
     ap.add_argument("--cache-dir", default=E("PATCH_STATS_CACHE", CACHE), help="HTTP cache dir [PATCH_STATS_CACHE]")
     ap.add_argument("--no-submitted", action="store_true", help="skip patchwork, git counts only")
@@ -148,7 +157,16 @@ def main():
     a.ref = a.ref or env_list("PATCH_STATS_REF", "HEAD")
     a.until_given = bool(a.until)
     a.until = a.until or dt.date.today().isoformat()
-    a.email = a.email or env_list("PATCH_STATS_EMAILS", DEFAULT_EMAILS)
+    specs = [f"you={','.join(a.email)}"] if a.email else a.person or [x for x in E("PATCH_STATS_PERSONS", DEFAULT_PERSONS).split(";") if x.strip()]
+    a.persons, a.owner = {}, {}
+    for sp in specs:
+        name, _, mails = sp.partition("=")
+        if not mails:
+            sys.exit(f"error: --person needs NAME=EMAIL[,EMAIL...], got '{sp}'")
+        a.persons[name.strip()] = [m.strip().lower() for m in mails.split(",") if m.strip()]
+        for m in a.persons[name.strip()]:
+            if a.owner.setdefault(m, name.strip()) != name.strip():
+                sys.exit(f"error: {m} listed for two people")
     a.carrier = a.carrier or env_list("PATCH_STATS_CARRIERS", DEFAULT_CARRIERS)
     a.tree = os.path.expanduser(a.tree)
     PW, CACHE = a.patchwork.rstrip("/"), os.path.expanduser(a.cache_dir)
@@ -162,16 +180,15 @@ def main():
     total = subprocess.run(["git", "-C", a.tree, "rev-list", "--count", "--no-merges", "--since=" + a.since] + (["--until=" + a.until + " 23:59:59"] if a.until_given else []) + a.ref,
                            capture_output=True, text=True).stdout.strip()
     print(f"Period {a.since} .. {a.until if a.until_given else 'now'}   ({total} commits in range)")
-    mine = {e.lower() for e in a.email}
     for r in a.ref:
         top = subprocess.run(["git", "-C", a.tree, "log", "-1", "--format=%h%x09%ae%x09%ce%x09%cs%x09%P%x09%s", r], capture_output=True, text=True).stdout.rstrip("\n").split("\t")
         if len(top) != 6:
             continue
         h, ae, ce, cd, parents, subj = top
-        counted = any(l.startswith(h) for l in g["merged"])
+        counted = any(l.startswith(h) for n in g for l in g[n]["merged"])
         why = ("counted as merged" if counted else
                "NOT counted: merge commit" if len(parents.split()) > 1 else
-               f"NOT counted: author {ae} is not in --email {a.email}" if ae.lower() not in mine else
+               f"NOT counted: author {ae} is not one of the configured people" if ae.lower() not in a.owner else
                f"NOT counted: committed {cd}, outside {a.since}..{a.until}")
         tb = subprocess.run(["git", "-C", a.tree, "log", "-1", "--format=%B", r], capture_output=True, text=True, errors="replace").stdout
         tr = ", ".join(f"{t}:{e}" for t, e in TRAILER.findall(tb)) or "none"
@@ -182,16 +199,26 @@ def main():
         print("WARNING: shallow clone, git history is truncated so counts are too low (git fetch --unshallow)", file=sys.stderr)
     if total in ("", "0"):
         print(f"WARNING: no commits at all in range on {a.ref}; wrong --ref/--tree or stale clone (git fetch)", file=sys.stderr)
-    for k in ("merged", "signoff", "reviewed", "tested"):
-        print(f"{k:10s}{len(g[k]):4d}")
-        if a.verbose:
-            print("\n".join("    " + l for l in g[k]))
+
+    subs, nscan = ({}, 0) if a.no_submitted else submitted(a)
+    names = list(a.persons)
+    w = max(9, *(len(n) for n in names)) + 2
+    print()
+    print(" " * 10 + "".join(f"{n:>{w}}" for n in names))
+    for k in STATS:
+        print(f"{k:10s}" + "".join(f"{len(g[n][k]):{w}d}" for n in names))
     if not a.no_submitted:
-        subs, n = submitted(a)
-        print(f"{'submitted':10s}{len(subs):4d}   (scanned {n} series/patches)")
-        if a.verbose:
-            for subj, mid in subs:
-                print(f"    {subj}\n        https://lore.kernel.org/all/{urllib.parse.quote(mid.strip('<>'), safe='@')}/")
+        print(f"{'submitted':10s}" + "".join(f"{len(subs[n]):{w}d}" for n in names) + f"   (scanned {nscan} series/patches)")
+    if a.verbose:
+        for n in names:
+            print(f"\n=== {n} ({', '.join(a.persons[n])}) ===")
+            for k in STATS:
+                print(f"{k} {len(g[n][k])}")
+                print("\n".join("    " + l for l in g[n][k]))
+            if not a.no_submitted:
+                print(f"submitted {len(subs[n])}")
+                for subj, mid in subs[n]:
+                    print(f"    {subj}\n        https://lore.kernel.org/all/{urllib.parse.quote(mid.strip('<>'), safe='@')}/")
 
 
 if __name__ == "__main__":
