@@ -1,0 +1,319 @@
+Snapshot taken 2026-10-27 21:07:33 IST
+
+                Anuj   Kanchan    Nitesh
+merged             7         2         1
+signoff           11         2         1
+reviewed          29        28        12
+tested            27         2         0
+submitted         42        30        10
+
+Patch stats 2026-01-01 .. 2026-10-27
+Refs: origin/master, origin/for-7.4/io_uring-dmabuf
+
+Anuj (anuj20.g@samsung.com, anuj1072538@gmail.com)
+merged (7)
+    45b716456dd9 io_uring/dma-buf: don't fail fixed buffers without dma-buf support
+    d5c8cfd41d25 nvme-pci: add SGL support for the dmabuf path
+    a03648e2efda nvme-pci: rename nvme_pci_sgl_set_data to nvme_pci_dma_iter_set_sgl
+    c16b885ad6b5 xfs: remove unused xfs_reflink_remap_range declaration
+    50ba24ccb9a9 xfs: set IOMAP_F_INTEGRITY for zoned writes on integrity devices
+    48d2b8351bae xfs: release alleged child inode on metapath unlink error
+    30e542a36228 blk-mq: bound blk_hctx_poll() to one jiffy
+signoff (11)
+    45b716456dd9 io_uring/dma-buf: don't fail fixed buffers without dma-buf support
+    d5c8cfd41d25 nvme-pci: add SGL support for the dmabuf path
+    a03648e2efda nvme-pci: rename nvme_pci_sgl_set_data to nvme_pci_dma_iter_set_sgl
+    c16b885ad6b5 xfs: remove unused xfs_reflink_remap_range declaration
+    50ba24ccb9a9 xfs: set IOMAP_F_INTEGRITY for zoned writes on integrity devices
+    48d2b8351bae xfs: release alleged child inode on metapath unlink error
+    30e542a36228 blk-mq: bound blk_hctx_poll() to one jiffy
+    fd15b9c6ec8a nfs: stop using writeback internals for WB_WRITEBACK accounting
+    8cab8dc0e141 gfs2: stop using writeback internals for dirty_exceeded check
+    07043a6ebeb2 f2fs: stop using writeback internals for dirty_exceeded checks
+    a235d3bcd28b writeback: prep helpers for dirty-limit and writeback accounting
+reviewed (29)
+    47ccc3f1c615 io_uring/rw: keep CQE flags on iopoll requests when adding kbuf flags
+    58a0c7578b25 xfs: always set xfs_healthmon::first_event when inserting at front of list
+    13c251b2b7fb block: don't include blk-integrity.h in bdev.c
+    accb6624e383 iomap: iomap_bio_read_folio_range_sync is missing a call to bio_uninit
+    8a8685b32c07 iomap: don't free integrity payload that doesn't exist
+    3bf9a21e7bcc block: handle nogenerate/noverify properly in fs-integrity
+    738f01912a1a block: lift BIP_CHECK_FLAGS to include/linux/bio-integrity.h
+    6c13180dba60 block: remove bip_should_check
+    431e40042d35 bio-integrity-fs: pass data iter to bio_integrity_verify()
+    2f5015461984 t10-pi: reduce ref tag code duplication
+    f144dbac4b17 nvme: remove nvme_dev_uring_cmd() IO_URING_F_IOPOLL check
+    23475637b0c4 io_uring/uring_cmd: allow non-iopoll cmds with IORING_SETUP_IOPOLL
+    7995be40deb3 io_uring: remove iopoll_queue from struct io_issue_def
+    9165dc4fa969 io_uring: add REQ_F_IOPOLL
+    a9aa6045abde block: pass a maxlen argument to bio_iov_iter_bounce
+    0bde8a12b554 block: add fs_bio_integrity helpers
+    8c56ef10150e block: make max_integrity_io_size public
+    3f00626832a9 block: prepare generation / verification helpers for fs usage
+    7afe93946dff block: add a bdev_has_integrity_csum helper
+    a936655697cd block: factor out a bio_integrity_setup_default helper
+    7ea25eaad5ae block: factor out a bio_integrity_action helper
+    42a6bd57ee9f io_uring: add IORING_OP_URING_CMD128 to opcode checks
+    8dd5e7c75d7b block: add helpers to bounce buffer an iov_iter into bios
+    301f5356521e block: remove bio_release_page
+    12da89e8844a block: open code bio_add_page and fix handling of mismatching P2P ranges
+    4d77007d42fd block: refactor get_contig_folio_len
+    fa0bdd45d7e3 block: add a BIO_MAX_SIZE constant and use it
+    a31bde687b10 block: use pi_tuple_size in bi_offload_capable()
+    ca22c566b891 block: zero non-PI portion of auto integrity buffer
+tested (27)
+    6bbb4d96f797 xfs: support T10 protection information
+    0b10a370529c iomap: support T10 protection information
+    e8f9cf03c9dc iomap: support ioends for buffered reads
+    57287771fa8d iomap: add a bioset pointer to iomap_read_folio_ops
+    5f4fe046cb3c iomap: allow file systems to hook into buffered read bio submission
+    19fb5f978075 iomap: only call into ->submit_read when there is a read_ctx
+    4d25c7d68896 iomap: pass the iomap_iter to ->submit_read
+    2580a0095fdc iomap: refactor iomap_bio_read_folio_range
+    a9aa6045abde block: pass a maxlen argument to bio_iov_iter_bounce
+    0bde8a12b554 block: add fs_bio_integrity helpers
+    8c56ef10150e block: make max_integrity_io_size public
+    3f00626832a9 block: prepare generation / verification helpers for fs usage
+    7afe93946dff block: add a bdev_has_integrity_csum helper
+    a936655697cd block: factor out a bio_integrity_setup_default helper
+    7ea25eaad5ae block: factor out a bio_integrity_action helper
+    3373503df025 xfs: use bounce buffering direct I/O when the device requires stable pages
+    c9d114846b38 iomap: add a flag to bounce buffer direct I/O
+    d969bd72cf68 iomap: support ioends for direct reads
+    c96b8b220271 iomap: rename IOMAP_DIO_DIRTY to IOMAP_DIO_USER_BACKED
+    45cec0de6c89 iomap: free the bio before completing the dio
+    e2fcff5bb4c4 iomap: share code between iomap_dio_bio_end_io and iomap_finish_ioend_direct
+    2631c9460229 iomap: split out the per-bio logic from iomap_dio_bio_iter
+    6e7a6c80198e iomap: simplify iomap_dio_bio_iter
+    8dd5e7c75d7b block: add helpers to bounce buffer an iov_iter into bios
+    301f5356521e block: remove bio_release_page
+    12da89e8844a block: open code bio_add_page and fix handling of mismatching P2P ranges
+    4d77007d42fd block: refactor get_contig_folio_len
+submitted (42)
+    2026-02-19 [PATCH] io_uring/rw: handle IORING_OP_URING_CMD128 in iopoll dispatch
+        https://lore.kernel.org/all/20260219123136.155590-1-anuj20.g@samsung.com/
+    2026-04-24 [PATCH 06/12] fs/read_write: Generalize generic_copy_file_checks()
+        https://lore.kernel.org/all/20260424224201.1949243-7-bvanassche@acm.org/
+    2026-06-11 [PATCH] blk-mq: bound blk_hctx_poll() to one jiffy
+        https://lore.kernel.org/all/20260611162719.910837-1-anuj20.g@samsung.com/
+    2026-06-17 [PATCH v2] blk-mq: bound blk_hctx_poll() to one jiffy
+        https://lore.kernel.org/all/20260617060850.1244788-1-anuj20.g@samsung.com/
+    2026-06-17 [PATCH v3] blk-mq: bound blk_hctx_poll() to one jiffy
+        https://lore.kernel.org/all/20260617155051.1266079-1-anuj20.g@samsung.com/
+    2026-07-17 [PATCH v4 1/6] fs: add write-stream management ioctls
+        https://lore.kernel.org/all/20260717125538.508925-2-joshi.k@samsung.com/
+    2026-07-17 [PATCH v4 3/6] xfs: implement write-stream management support
+        https://lore.kernel.org/all/20260717125538.508925-4-joshi.k@samsung.com/
+    2026-07-28 [PATCH v4 09/14] nvme-pci: add SGL support for the dmabuf path
+        https://lore.kernel.org/all/5c2e9c3bdd3e87c0c9a6e4395ea199002b83fd36.1785274111.git.asml.silence@gmail.com/
+    2026-08-01 [PATCH v5 10/16] nvme-pci: rename nvme_pci_sgl_set_data to nvme_pci_dma_iter_set_sgl
+        https://lore.kernel.org/all/ff507b4895521074938d82fe2647e003359ec2be.1785596451.git.asml.silence@gmail.com/
+    2026-08-01 [PATCH v5 11/16] nvme-pci: add SGL support for the dmabuf path
+        https://lore.kernel.org/all/aa8c58a3f7da3a36af31f6e3b48853e59d9facc1.1785596451.git.asml.silence@gmail.com/
+    2026-08-31 [PATCH] xfs: release alleged child inode on metapath unlink error
+        https://lore.kernel.org/all/20260831064157.758165-1-anuj20.g@samsung.com/
+    2026-09-01 [PATCH v2] xfs: release alleged child inode on metapath unlink error
+        https://lore.kernel.org/all/20260901054348.808571-1-anuj20.g@samsung.com/
+    2026-09-04 [PATCH] xfs: remove unused xfs_reflink_remap_range declaration
+        https://lore.kernel.org/all/20260904123641.3028007-1-anuj1072538@gmail.com/
+    2026-09-07 [PATCH] xfs: set IOMAP_F_INTEGRITY for zoned writes on integrity devices
+        https://lore.kernel.org/all/20260907072739.719289-1-hch@lst.de/
+    2026-09-21 [PATCH v5 1/8] fs: add write-stream management ioctls
+        https://lore.kernel.org/all/20260921093147.59935-2-joshi.k@samsung.com/
+    2026-09-21 [PATCH v5 2/8] fs: add generic write-stream management
+        https://lore.kernel.org/all/20260921093147.59935-3-joshi.k@samsung.com/
+    2026-09-21 [PATCH v5 4/8] xfs: implement software write-stream management
+        https://lore.kernel.org/all/20260921093147.59935-5-joshi.k@samsung.com/
+    2026-09-21 [PATCH v5 6/8] xfs: support write streams on realtime volumes
+        https://lore.kernel.org/all/20260921093147.59935-7-joshi.k@samsung.com/
+    2026-09-21 [PATCH v6 07/13] nvme-pci: rename nvme_pci_sgl_set_data to nvme_pci_dma_iter_set_sgl
+        https://lore.kernel.org/all/114bc2087c7811c849fafbf1392abd7edfb24471.1789997898.git.asml.silence@gmail.com/
+    2026-09-21 [PATCH v6 08/13] nvme-pci: add SGL support for the dmabuf path
+        https://lore.kernel.org/all/1a50e7e88263f97403f8df8583dbb1953600f2a9.1789997898.git.asml.silence@gmail.com/
+    2026-09-28 [PATCH v7 07/13] nvme-pci: rename nvme_pci_sgl_set_data to nvme_pci_dma_iter_set_sgl
+        https://lore.kernel.org/all/f950827b5805d13f08f0060df0eebc4ed56814fc.1790602223.git.asml.silence@gmail.com/
+    2026-09-28 [PATCH v7 08/13] nvme-pci: add SGL support for the dmabuf path
+        https://lore.kernel.org/all/9d09ba51f1335a17576f3b92f0e93230c39751d2.1790602223.git.asml.silence@gmail.com/
+    2026-10-07 [PATCH v8 04/13] nvme-pci: rename nvme_pci_sgl_set_data to nvme_pci_dma_iter_set_sgl
+        https://lore.kernel.org/all/2f8b57f68fd3e432085b3a7767971778bc7d1919.1791336002.git.asml.silence@gmail.com/
+    2026-10-07 [PATCH v8 07/13] nvme-pci: add SGL support for the dmabuf path
+        https://lore.kernel.org/all/b748f9a99355276efe74399c41de4934e9eaa5cb.1791336002.git.asml.silence@gmail.com/
+    2026-10-07 [PATCH v9 06/13] nvme-pci: rename nvme_pci_sgl_set_data to nvme_pci_dma_iter_set_sgl
+        https://lore.kernel.org/all/2f8b57f68fd3e432085b3a7767971778bc7d1919.1791336930.git.asml.silence@gmail.com/
+    2026-10-07 [PATCH v9 08/13] nvme-pci: add SGL support for the dmabuf path
+        https://lore.kernel.org/all/0613da77bbb89c3128221ffed3a76af4817981cd.1791336930.git.asml.silence@gmail.com/
+    2026-10-13 [PATCH v10 06/13] nvme-pci: rename nvme_pci_sgl_set_data to nvme_pci_dma_iter_set_sgl
+        https://lore.kernel.org/all/54f1186d20a7c24075dd38eda1dfc7ac3705a13e.1791924581.git.asml.silence@gmail.com/
+    2026-10-13 [PATCH v10 08/13] nvme-pci: add SGL support for the dmabuf path
+        https://lore.kernel.org/all/892e9887dabf195633d376de113b775b29ae7dd3.1791924581.git.asml.silence@gmail.com/
+    2026-10-13 [PATCH] block: reject dma-buf I/O on integrity checksum devices
+        https://lore.kernel.org/all/20261013050723.55577-1-anuj20.g@samsung.com/
+    2026-10-14 [PATCH v11 06/13] nvme-pci: rename nvme_pci_sgl_set_data to nvme_pci_dma_iter_set_sgl
+        https://lore.kernel.org/all/42788b01948b58b891476006cb7ee9f9f5e917db.1791975048.git.asml.silence@gmail.com/
+    2026-10-14 [PATCH v11 08/13] nvme-pci: add SGL support for the dmabuf path
+        https://lore.kernel.org/all/86fb4caeddaa58fafad106548f82950782ea04fd.1791975048.git.asml.silence@gmail.com/
+    2026-10-15 [PATCH v6 1/8] fs: add write-stream management ioctls
+        https://lore.kernel.org/all/20261015063246.103433-2-joshi.k@samsung.com/
+    2026-10-15 [PATCH v6 2/8] fs: add generic write-stream management
+        https://lore.kernel.org/all/20261015063246.103433-3-joshi.k@samsung.com/
+    2026-10-15 [PATCH v6 4/8] xfs: implement software write-stream management
+        https://lore.kernel.org/all/20261015063246.103433-5-joshi.k@samsung.com/
+    2026-10-15 [PATCH v6 6/8] xfs: support write streams on realtime volumes
+        https://lore.kernel.org/all/20261015063246.103433-7-joshi.k@samsung.com/
+    2026-10-16 [PATCH] nvme/io_uring: enable dma-buf backed passthrough I/O
+        https://lore.kernel.org/all/20261016103453.1129150-1-anuj1072538@gmail.com/
+    2026-10-22 [PATCH v2 1/5] io_uring/rsrc: pass import flags to io_import_reg_buf()
+        https://lore.kernel.org/all/20261022144501.2478417-2-anuj1072538@gmail.com/
+    2026-10-22 [PATCH v2 2/5] io_uring/uring_cmd: add import flags to io_uring_cmd_import_fixed()
+        https://lore.kernel.org/all/20261022144501.2478417-3-anuj1072538@gmail.com/
+    2026-10-22 [PATCH v2 3/5] io_uring/uring_cmd: support dma-buf registered buffers
+        https://lore.kernel.org/all/20261022144501.2478417-4-anuj1072538@gmail.com/
+    2026-10-22 [PATCH v2 4/5] block: map dma-buf iterators in blk_rq_map_user_iov()
+        https://lore.kernel.org/all/20261022144501.2478417-5-anuj1072538@gmail.com/
+    2026-10-22 [PATCH v2 5/5] nvme: support dma-buf registered buffers for passthrough
+        https://lore.kernel.org/all/20261022144501.2478417-6-anuj1072538@gmail.com/
+    2026-10-22 [PATCH] io_uring/dma-buf: don't fail fixed buffers without dma-buf support
+        https://lore.kernel.org/all/20261022132027.2293931-1-anuj1072538@gmail.com/
+
+Kanchan (joshi.k@samsung.com)
+merged (2)
+    56e1c6bbe4bb nvme: fix racy access to FDP placement id array
+    c1888444dc28 nvme: set ns->head in nvme_alloc_ns_head
+signoff (2)
+    56e1c6bbe4bb nvme: fix racy access to FDP placement id array
+    c1888444dc28 nvme: set ns->head in nvme_alloc_ns_head
+reviewed (28)
+    3cf6de080d97 nvme: bound FDP config log reads to the received buffer
+    6908a7029559 nvme: pass partition flags to passthrough checks
+    8a8685b32c07 iomap: don't free integrity payload that doesn't exist
+    53cdaeab2e30 nvme: raise FDP placement handle cap to U8_MAX and warn on overflow
+    cb144c2f6712 nvme-pci: release descriptor pools on probe failure
+    3bf9a21e7bcc block: handle nogenerate/noverify properly in fs-integrity
+    738f01912a1a block: lift BIP_CHECK_FLAGS to include/linux/bio-integrity.h
+    6c13180dba60 block: remove bip_should_check
+    1cc4cdae2a3b nvme-pci: fix missed admin queue sq doorbell write
+    f144dbac4b17 nvme: remove nvme_dev_uring_cmd() IO_URING_F_IOPOLL check
+    23475637b0c4 io_uring/uring_cmd: allow non-iopoll cmds with IORING_SETUP_IOPOLL
+    7995be40deb3 io_uring: remove iopoll_queue from struct io_issue_def
+    9165dc4fa969 io_uring: add REQ_F_IOPOLL
+    0375c81eb225 nvme-core: do not pass empty queue_limits to blk_mq_alloc_queue()
+    a9aa6045abde block: pass a maxlen argument to bio_iov_iter_bounce
+    0bde8a12b554 block: add fs_bio_integrity helpers
+    8c56ef10150e block: make max_integrity_io_size public
+    3f00626832a9 block: prepare generation / verification helpers for fs usage
+    7afe93946dff block: add a bdev_has_integrity_csum helper
+    a936655697cd block: factor out a bio_integrity_setup_default helper
+    7ea25eaad5ae block: factor out a bio_integrity_action helper
+    42a6bd57ee9f io_uring: add IORING_OP_URING_CMD128 to opcode checks
+    baa47c4f89eb nvme-pci: do not try to add queue maps at runtime
+    4735b510a00f nvme-pci: cap queue creation to used queues
+    166e31d7dbf6 nvme-pci: ensure we're polling a polled queue
+    72a41750f1a3 block: remove bio_last_bvec_all
+    f7bc22ca0d55 nvme/io_uring: optimize IOPOLL completions for local ring context
+    5e2fde1a9433 block: pass io_comp_batch to rq_end_io_fn callback
+tested (2)
+    baa47c4f89eb nvme-pci: do not try to add queue maps at runtime
+    4735b510a00f nvme-pci: cap queue creation to used queues
+submitted (30)
+    2026-02-16 [PATCH 1/4] fs: add write-stream management file_operations
+        https://lore.kernel.org/all/20260216052540.217920-2-joshi.k@samsung.com/
+    2026-02-16 [PATCH 2/4] fcntl: expose write-stream management to userspace
+        https://lore.kernel.org/all/20260216052540.217920-3-joshi.k@samsung.com/
+    2026-02-16 [PATCH 3/4] iomap: introduce and propagate write_stream
+        https://lore.kernel.org/all/20260216052540.217920-4-joshi.k@samsung.com/
+    2026-02-16 [PATCH 4/4] xfs: enable userspace write stream support
+        https://lore.kernel.org/all/20260216052540.217920-5-joshi.k@samsung.com/
+    2026-03-09 [PATCH v2 1/5] fs: add generic write-stream management ioctl
+        https://lore.kernel.org/all/20260309052944.156054-2-joshi.k@samsung.com/
+    2026-03-09 [PATCH v2 2/5] iomap: introduce and propagate write_stream
+        https://lore.kernel.org/all/20260309052944.156054-3-joshi.k@samsung.com/
+    2026-03-09 [PATCH v2 3/5] xfs: implement write-stream management support
+        https://lore.kernel.org/all/20260309052944.156054-4-joshi.k@samsung.com/
+    2026-03-09 [PATCH v2 4/5] xfs: steer allocation using write stream
+        https://lore.kernel.org/all/20260309052944.156054-5-joshi.k@samsung.com/
+    2026-03-09 [PATCH v2 5/5] xfs: introduce software write streams
+        https://lore.kernel.org/all/20260309052944.156054-6-joshi.k@samsung.com/
+    2026-06-16 [PATCH v3 1/6] fs: add generic write-stream management ioctl
+        https://lore.kernel.org/all/20260616180555.33338-2-joshi.k@samsung.com/
+    2026-06-16 [PATCH v3 2/6] iomap: introduce and propagate write_stream
+        https://lore.kernel.org/all/20260616180555.33338-3-joshi.k@samsung.com/
+    2026-06-16 [PATCH v3 3/6] xfs: implement write-stream management support
+        https://lore.kernel.org/all/20260616180555.33338-4-joshi.k@samsung.com/
+    2026-06-16 [PATCH v3 4/6] xfs: generic AG set based steering
+        https://lore.kernel.org/all/20260616180555.33338-5-joshi.k@samsung.com/
+    2026-06-16 [PATCH v3 5/6] xfs: write stream based AG placement
+        https://lore.kernel.org/all/20260616180555.33338-6-joshi.k@samsung.com/
+    2026-06-16 [PATCH v3 6/6] xfs: introduce software write streams
+        https://lore.kernel.org/all/20260616180555.33338-7-joshi.k@samsung.com/
+    2026-07-17 [PATCH v4 2/6] iomap: introduce and propagate write_stream
+        https://lore.kernel.org/all/20260717125538.508925-3-joshi.k@samsung.com/
+    2026-07-17 [PATCH v4 4/6] xfs: generic AG set based steering
+        https://lore.kernel.org/all/20260717125538.508925-5-joshi.k@samsung.com/
+    2026-07-17 [PATCH v4 5/6] xfs: write stream based AG placement
+        https://lore.kernel.org/all/20260717125538.508925-6-joshi.k@samsung.com/
+    2026-07-17 [PATCH v4 6/6] xfs: introduce software write streams
+        https://lore.kernel.org/all/20260717125538.508925-7-joshi.k@samsung.com/
+    2026-08-17 [PATCH] nvme: fix racy access to FDP placement id array
+        https://lore.kernel.org/all/20260817071158.2794-1-joshi.k@samsung.com/
+    2026-08-18 [PATCH v2 1/2] nvme: set ns->head in nvme_alloc_ns_head
+        https://lore.kernel.org/all/20260818060253.4104-2-joshi.k@samsung.com/
+    2026-08-18 [PATCH v2 2/2] nvme: fix racy access to FDP placement id array
+        https://lore.kernel.org/all/20260818060253.4104-3-joshi.k@samsung.com/
+    2026-09-21 [PATCH v5 3/8] fs: add i_write_stream, exclusive with the write life time hint
+        https://lore.kernel.org/all/20260921093147.59935-4-joshi.k@samsung.com/
+    2026-09-21 [PATCH v5 5/8] xfs: write stream based AG placement
+        https://lore.kernel.org/all/20260921093147.59935-6-joshi.k@samsung.com/
+    2026-09-21 [PATCH v5 7/8] iomap: introduce and propagate write_stream
+        https://lore.kernel.org/all/20260921093147.59935-8-joshi.k@samsung.com/
+    2026-09-21 [PATCH v5 8/8] xfs: support hardware write streams
+        https://lore.kernel.org/all/20260921093147.59935-9-joshi.k@samsung.com/
+    2026-10-15 [PATCH v6 3/8] fs: add i_write_stream, exclusive with the write life time hint
+        https://lore.kernel.org/all/20261015063246.103433-4-joshi.k@samsung.com/
+    2026-10-15 [PATCH v6 5/8] xfs: write stream based AG placement
+        https://lore.kernel.org/all/20261015063246.103433-6-joshi.k@samsung.com/
+    2026-10-15 [PATCH v6 7/8] iomap: introduce and propagate write_stream
+        https://lore.kernel.org/all/20261015063246.103433-8-joshi.k@samsung.com/
+    2026-10-15 [PATCH v6 8/8] xfs: support hardware write streams
+        https://lore.kernel.org/all/20261015063246.103433-9-joshi.k@samsung.com/
+
+Nitesh (nj.shetty@samsung.com)
+merged (1)
+    91e1c1bcf0f2 block, nvme: remove unused dma_iova_state function parameter
+signoff (1)
+    91e1c1bcf0f2 block, nvme: remove unused dma_iova_state function parameter
+reviewed (12)
+    0ef4daa6534a nvme: validate FDP configuration descriptor sizes
+    0967074f6830 nvme: fix FDP fdpcidx bounds check
+    7d6eb455ecf0 nvme: add support multipath passthrough iostats
+    b7f40ab50190 block: export passthrough stats enabled
+    fb0eeeed91f3 nvme-multipath: enable PCI P2PDMA for multipath devices
+    7882834048f1 block: clear BLK_FEAT_PCI_P2PDMA in blk_stack_limits() for non-supporting devices
+    2719bd1ee1a1 block: introduce blk_queue_rot()
+    068f5b5ef5bf block: cleanup queue limit features definition
+    4b9748055457 io_uring/rw: free potentially allocated iovec on cache put failure
+    15f506a77ad6 io_uring: remove nr_segs recalculation in io_import_kbuf()
+    641864314866 block: don't initialize bi_vcnt for cloned bio in bio_iov_bvec_set()
+    ee623c892aa5 block: use bvec iterator helper for bio_may_need_split()
+tested (0)
+submitted (10)
+    2026-01-12 [PATCH 1/2] block: remove unused dma_iova_state function parameter
+        https://lore.kernel.org/all/20260112135736.1982406-1-nj.shetty@samsung.com/
+    2026-01-12 [PATCH 2/2] nvme: blk_rq_dma_map_iter_next is no longer using iova state
+        https://lore.kernel.org/all/20260112135736.1982406-2-nj.shetty@samsung.com/
+    2026-01-12 [PATCH] block, nvme: remove unused dma_iova_state function parameter
+        https://lore.kernel.org/all/20260112143810.2046599-1-nj.shetty@samsung.com/
+    2026-04-24 [PATCH 01/12] block: Introduce queue limits for copy offloading
+        https://lore.kernel.org/all/20260424224201.1949243-2-bvanassche@acm.org/
+    2026-04-24 [PATCH 02/12] block: Add the REQ_OP_COPY_{SRC,DST} operations
+        https://lore.kernel.org/all/20260424224201.1949243-3-bvanassche@acm.org/
+    2026-04-24 [PATCH 04/12] block: Add an onloaded copy implementation
+        https://lore.kernel.org/all/20260424224201.1949243-5-bvanassche@acm.org/
+    2026-04-24 [PATCH 07/12] fs, block: Add copy_file_range() support for block devices
+        https://lore.kernel.org/all/20260424224201.1949243-8-bvanassche@acm.org/
+    2026-04-24 [PATCH 08/12] nvme: Add copy offloading support
+        https://lore.kernel.org/all/20260424224201.1949243-9-bvanassche@acm.org/
+    2026-04-24 [PATCH 09/12] nvmet: Support the Copy command
+        https://lore.kernel.org/all/20260424224201.1949243-10-bvanassche@acm.org/
+    2026-04-24 [PATCH 12/12] null_blk: Add support for REQ_OP_COPY_*
+        https://lore.kernel.org/all/20260424224201.1949243-13-bvanassche@acm.org/
+
