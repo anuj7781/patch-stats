@@ -1,11 +1,11 @@
 Snapshot taken 2026-10-27 21:07:33 IST
 
-                Anuj   Kanchan    Nitesh
-merged             7         2         1
-signoff           11         2         1
-reviewed          29        28        12
-tested            27         2         0
-submitted         42        30        10
+	Anuj	Kanchan	Nitesh
+merged	7	2	1
+signoff	11	2	1
+reviewed	29	28	12
+tested	27	2	0
+submitted	42	30	10
 
 Patch stats 2026-01-01 .. 2026-10-27
 Refs: origin/master, origin/for-7.4/io_uring-dmabuf

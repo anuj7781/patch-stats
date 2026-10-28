@@ -213,7 +213,11 @@ def main():
     out = a.output or os.environ.get("PATCH_STATS_OUTPUT")
     if out:
         with open(out, "w") as fh:
-            fh.write(f"Patch stats {a.since} .. {a.until if a.until_given else dt.date.today().isoformat()}\n"
+            fh.write(f"Snapshot taken {dt.datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')}\n\n")
+            fh.write("\t".join([""] + names) + "\n")
+            for k in STATS + (() if a.no_submitted else ("submitted",)):
+                fh.write("\t".join([k] + [str(len(subs[n] if k == "submitted" else g[n][k])) for n in names]) + "\n")
+            fh.write(f"\nPatch stats {a.since} .. {a.until if a.until_given else dt.date.today().isoformat()}\n"
                      f"Refs: {', '.join(a.ref)}\n\n")
             for n in names:
                 fh.write(f"{n} ({', '.join(a.persons[n])})\n")
